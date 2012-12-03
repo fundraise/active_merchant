@@ -44,6 +44,16 @@ class CyberSourceTest < Test::Unit::TestCase
           :currency => 'USD'
     }
 
+    @options_with_merchant_defined_fields = @options.merge(
+      { :merchant_defined_data => { 
+          :field1 => "FIELD1",
+          :field2 => "FIELD2",
+          :field3 => "FIELD3",
+          :field5 => "FIELD5"
+        }
+      }
+    )
+
     @subscription_options = {
       :order_id => generate_unique_id,
       :email => 'someguy1232@fakeemail.net',
@@ -199,6 +209,16 @@ class CyberSourceTest < Test::Unit::TestCase
     assert response = @gateway.authorize(@amount, @credit_card, @options)
     assert response.success?
     assert_success(@gateway.auth_reversal(@amount, response.authorization, @options))
+  end
+
+  def test_merchant_defined_fields
+    @gateway.expects(:ssl_post).returns(successful_purchase_response)
+
+    assert response = @gateway.purchase(@amount, @credit_card, @options_with_merchant_defined_fields)
+    assert_equal 'Successful transaction', response.message
+    assert_success response
+    assert_equal "#{@options[:order_id]};#{response.params['requestID']};#{response.params['requestToken']}", response.authorization
+    assert response.test?
   end
 
   private

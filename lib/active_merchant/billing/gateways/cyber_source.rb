@@ -253,6 +253,7 @@ module ActiveMerchant #:nodoc:
       def build_purchase_request(money, creditcard_or_reference, options)
         xml = Builder::XmlMarkup.new :indent => 2
         add_creditcard_or_subscription(xml, money, creditcard_or_reference, options)
+        add_merchant_defined_data(xml, options[:merchant_defined_data]) if options[:merchant_defined_data]
         add_purchase_service(xml, options)
         add_business_rules_data(xml)
         xml.target!
@@ -502,6 +503,23 @@ module ActiveMerchant #:nodoc:
         end
       end
 
+      def add_merchant_defined_data(xml, merch_defined_data)
+        if merch_defined_data
+          xml.tag! 'merchantDefinedData' do
+            xml.tag! 'field1', merch_defined_data[:field1] if merch_defined_data[:field1] 
+            xml.tag! 'field2', merch_defined_data[:field2] if merch_defined_data[:field2] 
+            xml.tag! 'field3', merch_defined_data[:field3] if merch_defined_data[:field3] 
+            xml.tag! 'field4', merch_defined_data[:field4] if merch_defined_data[:field4] 
+            xml.tag! 'field5', merch_defined_data[:field5] if merch_defined_data[:field5] 
+            xml.tag! 'field6', merch_defined_data[:field6] if merch_defined_data[:field6] 
+            xml.tag! 'field7', merch_defined_data[:field7] if merch_defined_data[:field7] 
+            xml.tag! 'field8', merch_defined_data[:field8] if merch_defined_data[:field8] 
+            xml.tag! 'field9', merch_defined_data[:field9] if merch_defined_data[:field9] 
+            xml.tag! 'field10', merch_defined_data[:field10] if merch_defined_data[:field10] 
+          end
+        end
+      end
+      
       # Where we actually build the full SOAP request using builder
       def build_request(body, options)
         xml = Builder::XmlMarkup.new :indent => 2
@@ -528,7 +546,8 @@ module ActiveMerchant #:nodoc:
       # Contact CyberSource, make the SOAP request, and parse the reply into a
       # Response object
       def commit(request, options)
-        response = parse(ssl_post(test? ? self.test_url : self.live_url, build_request(request, options)))
+        xml_request = build_request(request, options)
+        response = parse(ssl_post(test? ? self.test_url : self.live_url, xml_request))
 
         success = response[:decision] == "ACCEPT"
         message = @@response_codes[('r' + response[:reasonCode]).to_sym] rescue response[:message]
